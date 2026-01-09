@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>D&D Spell Cards</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: black;
+        color: green;
+        padding: 20px;
+      }
+
+      h1 {
+        background-color: green;
+        color: black;
+        text-align: center;
+        padding: 10px;
+      }
+
+      label {
+        display: block;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      select {
+        width: 250px;
+        margin-top: 5px;
+        padding: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>D&D Spell Cards</h1>
+
+    <div id="spellDropdowns"></div>
+
+    <script>
+      const container = document.getElementById("spellDropdowns");
+      const groupedSpells = {};
+
+      fetch("https://www.dnd5eapi.co/api/2014/spells")
+        .then((res) => res.json())
+        .then((data) => {
+          data.results.forEach((spell) => {
+            fetch(`https://www.dnd5eapi.co/api/2014/spells/${spell.index}`)
+              .then((res) => res.json())
+              .then((details) => {
+                const level = details.level;
+
+                if (!groupedSpells[level]) {
+                  groupedSpells[level] = [];
+                }
+
+                groupedSpells[level].push(details);
+                renderDropdowns();
+              });
+          });
+        });
+
+      function renderDropdowns() {
+        container.innerHTML = "";
+
+        Object.keys(groupedSpells)
+          .sort((a, b) => a - b)
+          .forEach((level) => {
+            const label = document.createElement("label");
+            label.textContent =
+              level === "0" ? "Default Spells" : `Level ${level} Spells`;
+
+            const select = document.createElement("select");
+            select.innerHTML = `<option value="">Select a spell</option>`;
+
+            groupedSpells[level]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .forEach((spell) => {
+                const option = document.createElement("option");
+                option.value = spell.index;
+                option.textContent = spell.name;
+                select.appendChild(option);
+              });
+
+            select.onchange = () => {
+              if (select.value) localSpell(select.value);
+            };
+
+            container.appendChild(label);
+            container.appendChild(select);
+          });
+      }
+
+      function localSpell(index) {
+        fetch(`https://www.dnd5eapi.co/api/2014/spells/${index}`)
+          .then((response) => response.json())
+          .then((spell) => {
+            alert(`Name: ${spell.name}\n` + `Level: ${spell.level}\n`);
+          });
+      }
+    </script>
+  </body>
+</html>
